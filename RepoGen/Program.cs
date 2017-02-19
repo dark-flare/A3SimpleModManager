@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 using Microsoft.Extensions.CommandLineUtils;
 
 
-namespace RepoGenerator
+namespace RepoGen
 {
     public class Program
     {
@@ -29,6 +29,7 @@ namespace RepoGenerator
                 if (dir == null)
                 {
                     cla.ShowHelp();
+                    
                     return 0;
                 }
 
@@ -38,7 +39,7 @@ namespace RepoGenerator
             {
                 return cla.Execute(args);
             }
-            catch(Exception e)
+            catch (Exception e)
             {
                 Console.WriteLine("Error launching repo generator");
                 Console.WriteLine(e.Message);
