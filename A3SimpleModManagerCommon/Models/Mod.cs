@@ -7,6 +7,6 @@ namespace A3SimpleModManagerCommon.Models
         public string Name { get; set; }
         public string FolderName { get; set; }
         
-        public ICollection<File> Files { get; set; }
+        public ICollection<ModFile> Files { get; set; }
     }
 }

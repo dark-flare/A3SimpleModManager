@@ -1,19 +1,24 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Security.Cryptography;
 using System.Text.RegularExpressions;
 using A3SimpleModManagerCommon.Models;
 using Newtonsoft.Json;
+using ModFile = A3SimpleModManagerCommon.Models.ModFile;
+
 
 namespace RepoGen
 {
     public class Utils
     {
+        private static Repository _repo;
         public static int GenerateRepo(string repodir, string reponame)
         {
             if (Directory.Exists(repodir))
             {
-                var repo = new Repository {Name = reponame};
+                _repo = new Repository {Name = reponame, Mods = new List<Mod>()};
                 var di = new DirectoryInfo(repodir);
                 Console.WriteLine("Beginning repo generation in " + repodir);
                 foreach (var dir in di.EnumerateDirectories())
@@ -28,9 +33,11 @@ namespace RepoGen
                         var mod = new Mod
                         {
                             Name = ExtractModInfo(modcpp),
-                            FolderName = dir.Name
+                            FolderName = dir.Name,
+                            Files = new List<ModFile>()
                         };
-                        repo.Mods.Add(mod);
+                        WalkDirectory(dir, mod);
+                        _repo.Mods.Add(mod);
 
                     }
                     else
@@ -38,7 +45,19 @@ namespace RepoGen
                         Console.WriteLine("This doesn't appear to be a mod folder.");
                     }
                 }
-                Console.WriteLine(JsonConvert.SerializeObject(repo));
+                try
+                {
+                    Console.WriteLine("Writing repo file in " + repodir);
+                    File.WriteAllText(repodir + "\\repo.json", JsonConvert.SerializeObject(_repo));
+                }
+                catch(Exception e)
+                {
+                    Console.WriteLine("Error writing json!");
+                    Console.WriteLine(e.Message);
+                    return 0;
+                }
+                //Console.WriteLine(JsonConvert.SerializeObject(_repo));
+                return 1;
             }
             else
             {
@@ -49,19 +68,49 @@ namespace RepoGen
             return 1;
         }
 
+        public static void WalkDirectory(DirectoryInfo dir, Mod mod)
+        {
+            Console.WriteLine("Found directory " + dir.Name + " belonging to " + mod.Name);
+            foreach (var file in dir.EnumerateFiles())
+            {
+                var modfile = new ModFile
+                {
+                    Filename = file.Name,
+                    RelativePath = file.DirectoryName.Split(new[] {mod.FolderName}, StringSplitOptions.None)[1],
+                    Hash = BitConverter.ToString(GetMd5(file)).Replace("-", "")
+                };
+                mod.Files.Add(modfile);
+            }
+            foreach (var subdir in dir.EnumerateDirectories())
+            {
+                // wew recursion
+                WalkDirectory(subdir, mod);
+            }
+        }
+
         private static string ExtractModInfo(FileInfo modcpp)
         {
-            var lines = System.IO.File.ReadAllLines(modcpp.FullName);
+            var lines = File.ReadAllLines(modcpp.FullName);
             var modName = lines.FirstOrDefault(x => x.StartsWith("name", StringComparison.OrdinalIgnoreCase));
             if (!string.IsNullOrEmpty(modName))
             {
-                var result = from Match match in Regex.Matches(modName, "\"([^\"]*)\"")
-                    select match.ToString();
-                return result.First();
+                var result = lines[0].Split('"')[1];
+                return result;
             }
             else
             {
-                return modcpp.DirectoryName;
+                return modcpp.Directory.Name;
+            }
+        }
+
+        private static byte[] GetMd5(FileInfo file)
+        {
+            using (var md5 = MD5.Create())
+            {
+                using (var stream = File.OpenRead(file.FullName))
+                {
+                    return md5.ComputeHash(stream);
+                }
             }
         }
     }
