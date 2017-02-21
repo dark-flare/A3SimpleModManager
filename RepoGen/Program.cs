@@ -28,7 +28,7 @@ namespace RepoGen
                     
                     return 0;
                 }
-                Utils.GenerateRepo(dir, name);
+                Generate.GenerateRepo(dir, name);
                 return 1;
             });
             try

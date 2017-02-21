@@ -1,6 +1,4 @@
-﻿using System.Security.Cryptography;
-
-namespace A3SimpleModManagerCommon.Models
+﻿namespace A3SimpleModManagerCommon.Models
 {
     public class ModFile
     {
