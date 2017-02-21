@@ -48,7 +48,7 @@ namespace RepoGen
                 try
                 {
                     Console.WriteLine("Writing repo file in " + repodir);
-                    File.WriteAllText(repodir + "\\repo.json", JsonConvert.SerializeObject(_repo));
+                    File.WriteAllText(Path.Combine(repodir, "repo.json"), JsonConvert.SerializeObject(_repo));
                 }
                 catch(Exception e)
                 {
@@ -73,11 +73,18 @@ namespace RepoGen
             Console.WriteLine("Found directory " + dir.Name + " belonging to " + mod.Name);
             foreach (var file in dir.EnumerateFiles())
             {
+                var relativePathExtract = file.DirectoryName.Split(
+                    new[] {mod.FolderName + Path.DirectorySeparatorChar}, StringSplitOptions.None);
+                var relpath = "";
+                if (relativePathExtract.Length > 1)
+                {
+                    relpath = relativePathExtract.Last();
+                }
                 var modfile = new ModFile
                 {
                     Filename = file.Name,
-                    RelativePath = file.DirectoryName.Split(new[] {mod.FolderName}, StringSplitOptions.None)[1],
-                    Hash = BitConverter.ToString(GetMd5(file)).Replace("-", "")
+                    RelativePath = relpath,
+                    Hash = A3SimpleModManagerCommon.Utils.GetMd5(file)
                 };
                 mod.Files.Add(modfile);
             }
@@ -100,17 +107,6 @@ namespace RepoGen
             else
             {
                 return modcpp.Directory.Name;
-            }
-        }
-
-        private static byte[] GetMd5(FileInfo file)
-        {
-            using (var md5 = MD5.Create())
-            {
-                using (var stream = File.OpenRead(file.FullName))
-                {
-                    return md5.ComputeHash(stream);
-                }
             }
         }
     }
