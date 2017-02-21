@@ -2,12 +2,11 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Threading.Tasks;
 using A3SimpleModManagerCommon.Models;
 using Newtonsoft.Json;
-using ModFile = A3SimpleModManagerCommon.Models.ModFile;
 
-
-namespace RepoGen
+namespace A3SimpleModManagerCommon
 {
     public class Generate
     {
@@ -16,7 +15,7 @@ namespace RepoGen
         {
             if (Directory.Exists(repodir))
             {
-                _repo = new Repository {Name = reponame, Mods = new List<Mod>()};
+                _repo = new Repository { Name = reponame, Mods = new List<Mod>() };
                 var di = new DirectoryInfo(repodir);
                 Console.WriteLine("Beginning repo generation in " + repodir);
                 foreach (var dir in di.EnumerateDirectories())
@@ -30,11 +29,11 @@ namespace RepoGen
                         Console.WriteLine("mod.cpp found - this is a mod folder.");
                         var mod = new Mod
                         {
-                            Name = A3SimpleModManagerCommon.Utils.ExtractModInfo(modcpp),
+                            Name = Utils.ExtractModInfo(modcpp),
                             FolderName = dir.Name,
                             Files = new List<ModFile>()
                         };
-                        A3SimpleModManagerCommon.Utils.WalkDirectory(dir, mod);
+                        Utils.WalkDirectory(dir, mod);
                         _repo.Mods.Add(mod);
 
                     }
@@ -48,7 +47,7 @@ namespace RepoGen
                     Console.WriteLine("Writing repo file in " + repodir);
                     File.WriteAllText(Path.Combine(repodir, "repo.json"), JsonConvert.SerializeObject(_repo));
                 }
-                catch(Exception e)
+                catch (Exception e)
                 {
                     Console.WriteLine("Error writing json!");
                     Console.WriteLine(e.Message);
